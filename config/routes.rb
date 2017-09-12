@@ -11,4 +11,6 @@ Rails.application.routes.draw do
     resources :movies
   end
   root "movies#index"
+  get "about/index"
+  get 'about2', to: 'movies#about2'
 end
