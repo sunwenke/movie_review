@@ -19,6 +19,7 @@ class MoviesController < ApplicationController
     @movie = Movie.new(movie_params)
     @movie.user = current_user
     if @movie.save
+      current_user.join!(@movie)
       redirect_to movies_path, notice: "新增电影成功！"
     else
       render :new
@@ -38,8 +39,40 @@ class MoviesController < ApplicationController
 
   def destroy
     @movie.destroy
-
       redirect_to movies_path, notice: "已删除电影 - "+@movie.title
+  end
+
+  def join
+    @movie = Movie.find(params[:id])
+
+    if !current_user.is_member_of?(@movie)
+      current_user.join!(@movie)
+      flash[:notice] = "收藏电影《" +@movie.title+ "》成功！"
+    else
+      flash[:warning] = "已收藏电影《" +@movie.title+ "》！"
+    end
+
+    redirect_to movie_path(@movie)
+  end
+
+  def quit
+    @movie = Movie.find(params[:id])
+
+    if current_user.is_member_of?(@movie)
+      current_user.quit!(@movie)
+      flash[:alert] = "已取消收藏电影《" +@movie.title+ "》！"
+    else
+      flash[:warning] = "你还未收藏电影《" +@movie.title+ "》！"
+    end
+
+    redirect_to movie_path(@movie)
+  end
+
+
+  private
+
+  def movie_params
+    params.require(:movie).permit(:title, :description)
   end
 
   def find_movie_and_check_permission
@@ -48,14 +81,5 @@ class MoviesController < ApplicationController
     if current_user != @movie.user
       redirect_to root_path, alert: "你没有权限这样做！"
     end
-  end
-
-
-
-
-  private
-
-  def movie_params
-    params.require(:movie).permit(:title, :description)
   end
 end
